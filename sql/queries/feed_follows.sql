@@ -5,7 +5,13 @@ WITH ins AS (
     RETURNING *
 )
 SELECT ins.*, users.name AS username, feeds.name AS feedname FROM ins
-    JOIN users ON users.id = ins.user_id
-    JOIN feeds ON feeds.id = ins.feed_id;
+JOIN users ON users.id = ins.user_id
+JOIN feeds ON feeds.id = ins.feed_id;
+
+-- name: GetFeedFollowsForUser :many
+SELECT feeds.name AS feedname, users.name AS username FROM feed_follows
+    JOIN users ON users.id = feed_follows.user_id
+    JOIN feeds ON feeds.id = feed_follows.feed_id
+WHERE users.name = $1;
 
 

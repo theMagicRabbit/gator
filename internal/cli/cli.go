@@ -128,6 +128,24 @@ func HandlerFollow(s *state.State, cmd Command) error {
 	return nil
 }
 
+func HandlerFollowing(s *state.State, cmd Command) error {
+	if lenArgs := len(cmd.Args); lenArgs != 0 {
+		return fmt.Errorf("following does not take any arguments: %d were provided", lenArgs)
+	}
+	if s.Config.Current_user_name == "" {
+		return fmt.Errorf("No user is logged in. Please login first.")
+	}
+	following, err := s.Db.GetFeedFollowsForUser(context.Background(), s.Config.Current_user_name)
+	if err != nil {
+		return err
+	}
+	for _, f := range following {
+		fmt.Printf("User: %s\tSubscription: %s\n", f.Username, f.Feedname)
+	}
+	
+	return nil
+}
+
 func HandlerLogin(s *state.State, cmd Command) error {
 	if len(cmd.Args) < 1 {
 		return fmt.Errorf("Login requires one argument; zero provided.")
