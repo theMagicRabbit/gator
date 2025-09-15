@@ -97,6 +97,37 @@ func HandlerFeeds(s *state.State, cmd Command) error {
 	return nil
 }
 
+func HandlerFollow(s *state.State, cmd Command) error {
+	if argLen := len(cmd.Args); argLen < 1 {
+		return fmt.Errorf("follow requires one argument; zero provided.")
+	} else if argLen > 1 {
+		return fmt.Errorf("follow requires one argument; %d provided.", argLen)
+	}
+	utcTime := time.Now().UTC()
+	user, err := s.Db.GetUser(context.Background(), s.Config.Current_user_name)
+	if err != nil {
+		return err
+	}
+	feed, err := s.Db.GetFeed(context.Background(), cmd.Args[0])
+	if err != nil {
+		return err
+	}
+	params := database.CreateFeedFollowsParams{
+		ID: uuid.New(),
+		CreatedAt: utcTime,
+		UpdatedAt: utcTime,
+		UserID: user.ID,
+		FeedID: feed.ID,
+	}
+	following, err := s.Db.CreateFeedFollows(context.Background(), params)
+	if err != nil {
+		return err
+	}
+	fmt.Println(following)
+	
+	return nil
+}
+
 func HandlerLogin(s *state.State, cmd Command) error {
 	if len(cmd.Args) < 1 {
 		return fmt.Errorf("Login requires one argument; zero provided.")

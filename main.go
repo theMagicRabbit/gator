@@ -35,6 +35,7 @@ func main() {
 	commands.Register("addfeed", cli.HandlerAddFeed)
 	commands.Register("agg", cli.HandlerAgg)
 	commands.Register("feeds", cli.HandlerFeeds)
+	commands.Register("follow", cli.HandlerFollow)
 	commands.Register("login", cli.HandlerLogin)
 	commands.Register("register", cli.HandlerRegister)
 	commands.Register("reset", cli.HandlerReset)
