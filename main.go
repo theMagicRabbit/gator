@@ -32,10 +32,14 @@ func main() {
 	commands := cli.Commands{
 		Commands: map[string]func(*state.State, cli.Command) error {},
 	}
+	commands.Register("addfeed", cli.HandlerAddFeed)
+	commands.Register("agg", cli.HandlerAgg)
+	commands.Register("feeds", cli.HandlerFeeds)
 	commands.Register("login", cli.HandlerLogin)
 	commands.Register("register", cli.HandlerRegister)
 	commands.Register("reset", cli.HandlerReset)
 	commands.Register("users", cli.HandlerUsers)
+
 	if len(os.Args) < 2 {
 		fmt.Println("No arguments provided")
 		os.Exit(1)

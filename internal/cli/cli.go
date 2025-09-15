@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"github.com/theMagicRabbit/gator/internal/database"
+	"github.com/theMagicRabbit/gator/internal/feed"
 	"github.com/theMagicRabbit/gator/internal/state"
 )
 
@@ -42,6 +43,58 @@ func (c Commands) Register(name string, f func(*state.State, Command) error) {
 		return
 	}
 	c.Commands[name] = f
+}
+
+func HandlerAddFeed(s *state.State, cmd Command) error {
+	if argLen := len(cmd.Args); argLen < 2 {
+		return fmt.Errorf("addfeed requires two argument; zero provided.")
+	} else if argLen > 2 {
+		return fmt.Errorf("addfeed requires two argument; %d provided.", argLen)
+	}
+	utcTime := time.Now().UTC()
+	user_id, err := s.Db.GetUser(context.Background(), s.Config.Current_user_name)
+	if err != nil {
+		return err
+	}
+	params := database.CreateFeedParams{
+		ID:  uuid.New(),
+		CreatedAt: utcTime,
+		UpdatedAt: utcTime,
+		Name: cmd.Args[0],
+		Url: cmd.Args[1],
+		UserID: user_id.ID,
+	}
+	createFeed, err := s.Db.CreateFeed(context.Background(), params)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%+v\n", createFeed)
+	return nil
+}
+
+func HandlerAgg(s *state.State, cmd Command) error {
+	url := "https://www.wagslane.dev/index.xml"
+	feed, err := feed.FetchFeed(context.Background(), url)
+	if err != nil {
+		return err
+	}
+	fmt.Println(feed)
+	return nil
+}
+
+func HandlerFeeds(s *state.State, cmd Command) error {
+	feed, err := s.Db.GetAllFeeds(context.Background())
+	if err != nil {
+		return err
+	}
+	for i, f := range feed {
+		username, err := s.Db.GetUserFromID(context.Background(), f.UserID)
+		if err != nil {
+			continue
+		}
+		fmt.Printf("[Feed %d]\nname: %s\nurl: %s\nusername: %s\n", i, f.Name, f.Url, username.Name)
+	}
+	return nil
 }
 
 func HandlerLogin(s *state.State, cmd Command) error {
