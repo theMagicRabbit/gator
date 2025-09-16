@@ -45,24 +45,20 @@ func (c Commands) Register(name string, f func(*state.State, Command) error) {
 	c.Commands[name] = f
 }
 
-func HandlerAddFeed(s *state.State, cmd Command) error {
+func HandlerAddFeed(s *state.State, cmd Command, user database.User) error {
 	if argLen := len(cmd.Args); argLen < 2 {
 		return fmt.Errorf("addfeed requires two argument; zero provided.")
 	} else if argLen > 2 {
 		return fmt.Errorf("addfeed requires two argument; %d provided.", argLen)
 	}
 	utcTime := time.Now().UTC()
-	user_id, err := s.Db.GetUser(context.Background(), s.Config.Current_user_name)
-	if err != nil {
-		return err
-	}
 	params := database.CreateFeedParams{
 		ID:  uuid.New(),
 		CreatedAt: utcTime,
 		UpdatedAt: utcTime,
 		Name: cmd.Args[0],
 		Url: cmd.Args[1],
-		UserID: user_id.ID,
+		UserID: user.ID,
 	}
 	createFeed, err := s.Db.CreateFeed(context.Background(), params)
 	if err != nil {
@@ -72,7 +68,7 @@ func HandlerAddFeed(s *state.State, cmd Command) error {
 		ID: uuid.New(),
 		CreatedAt: utcTime,
 		UpdatedAt: utcTime,
-		UserID: user_id.ID,
+		UserID: user.ID,
 		FeedID: createFeed.ID,
 	}
 	following, err := s.Db.CreateFeedFollows(context.Background(), feedFollowParams)
@@ -108,17 +104,13 @@ func HandlerFeeds(s *state.State, cmd Command) error {
 	return nil
 }
 
-func HandlerFollow(s *state.State, cmd Command) error {
+func HandlerFollow(s *state.State, cmd Command, user database.User) error {
 	if argLen := len(cmd.Args); argLen < 1 {
 		return fmt.Errorf("follow requires one argument; zero provided.")
 	} else if argLen > 1 {
 		return fmt.Errorf("follow requires one argument; %d provided.", argLen)
 	}
 	utcTime := time.Now().UTC()
-	user, err := s.Db.GetUser(context.Background(), s.Config.Current_user_name)
-	if err != nil {
-		return err
-	}
 	feed, err := s.Db.GetFeed(context.Background(), cmd.Args[0])
 	if err != nil {
 		return err
@@ -139,14 +131,11 @@ func HandlerFollow(s *state.State, cmd Command) error {
 	return nil
 }
 
-func HandlerFollowing(s *state.State, cmd Command) error {
+func HandlerFollowing(s *state.State, cmd Command, user database.User) error {
 	if lenArgs := len(cmd.Args); lenArgs != 0 {
 		return fmt.Errorf("following does not take any arguments: %d were provided", lenArgs)
 	}
-	if s.Config.Current_user_name == "" {
-		return fmt.Errorf("No user is logged in. Please login first.")
-	}
-	following, err := s.Db.GetFeedFollowsForUser(context.Background(), s.Config.Current_user_name)
+	following, err := s.Db.GetFeedFollowsForUser(context.Background(), user.Name)
 	if err != nil {
 		return err
 	}
