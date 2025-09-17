@@ -206,6 +206,24 @@ func HandlerReset(s *state.State, cmd Command) error {
 	return nil
 }
 
+func HandlerUnfollow(s *state.State, cmd Command, user database.User) error {
+	if argLen := len(cmd.Args); argLen < 1 {
+		return fmt.Errorf("unfollow requires one argument; zero provided.")
+	} else if argLen > 1 {
+		return fmt.Errorf("unfollow requires one argument; %d provided.", argLen)
+	}
+	feed, err := s.Db.GetFeed(context.Background(), cmd.Args[0])
+	if err != nil {
+		return err
+	}
+	params := database.DeleteFeedFollowParams{
+		UserID: user.ID,
+		FeedID: feed.ID,
+	}
+	err = s.Db.DeleteFeedFollow(context.Background(), params)
+	return nil
+}
+
 func HandlerUsers(s *state.State, cmd Command) error {
 	usernames, err := s.Db.GetAllUsers(context.Background())
 	if err != nil {
