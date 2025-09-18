@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"os"
@@ -12,6 +13,21 @@ import (
 
 	_ "github.com/lib/pq"
 )
+
+func middlewareLoggedIn(handler func(s *state.State, cmd cli.Command, user database.User) error) func(*state.State, cli.Command) error {
+	 return func(s *state.State, cmd cli.Command) error {
+		user, err := s.Db.GetUser(context.Background(), s.Config.Current_user_name)
+		if err != nil {
+			return err
+		}
+		err = handler(s, cmd, user)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+}
+
 
 
 func main() {
@@ -32,12 +48,15 @@ func main() {
 	commands := cli.Commands{
 		Commands: map[string]func(*state.State, cli.Command) error {},
 	}
-	commands.Register("addfeed", cli.HandlerAddFeed)
+	commands.Register("addfeed", middlewareLoggedIn(cli.HandlerAddFeed))
 	commands.Register("agg", cli.HandlerAgg)
 	commands.Register("feeds", cli.HandlerFeeds)
+	commands.Register("follow", middlewareLoggedIn(cli.HandlerFollow))
+	commands.Register("following", middlewareLoggedIn(cli.HandlerFollowing))
 	commands.Register("login", cli.HandlerLogin)
 	commands.Register("register", cli.HandlerRegister)
 	commands.Register("reset", cli.HandlerReset)
+	commands.Register("unfollow", middlewareLoggedIn(cli.HandlerUnfollow))
 	commands.Register("users", cli.HandlerUsers)
 
 	if len(os.Args) < 2 {
