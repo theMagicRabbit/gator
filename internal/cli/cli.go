@@ -80,13 +80,20 @@ func HandlerAddFeed(s *state.State, cmd Command, user database.User) error {
 }
 
 func HandlerAgg(s *state.State, cmd Command) error {
-	url := "https://www.wagslane.dev/index.xml"
-	feed, err := feed.FetchFeed(context.Background(), url)
+	if argLen := len(cmd.Args); argLen < 1 {
+		return fmt.Errorf("agg requires one argument; zero provided.")
+	} else if argLen > 1 {
+		return fmt.Errorf("agg requires one argument; %d provided.", argLen)
+	}
+	duration_between_reqs, err := time.ParseDuration(cmd.Args[0])
 	if err != nil {
 		return err
 	}
-	fmt.Println(feed)
-	return nil
+	fmt.Printf("Collecting feeds every %s\n", duration_between_reqs.String())
+	ticker := time.NewTicker(duration_between_reqs)
+	for ; ; <-ticker.C {
+		feed.ScrapeFeeds(s)
+	}
 }
 
 func HandlerFeeds(s *state.State, cmd Command) error {
