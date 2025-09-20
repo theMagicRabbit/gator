@@ -7,7 +7,9 @@ import (
 	"html"
 	"io"
 	"net/http"
+	"time"
 
+	"github.com/theMagicRabbit/gator/internal/database"
 	"github.com/theMagicRabbit/gator/internal/state"
 )
 
@@ -63,6 +65,15 @@ func ScrapeFeeds(s *state.State) error {
 	}
 	feed, err := FetchFeed(context.Background(), next.Url)
 	if err != nil {
+		return err
+	}
+	utcTimestamp := time.Now().UTC()
+	params := database.MarkFeedFetchedParams{
+		ID: next.ID,
+		UpdatedAt: utcTimestamp,
+	}
+	_, err = s.Db.MarkFeedFetched(context.Background(), params)
+	if err != nil { 
 		return err
 	}
 	for _, item := range feed.Channel.Item {
