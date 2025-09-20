@@ -3,9 +3,12 @@ package feed
 import (
 	"context"
 	"encoding/xml"
+	"fmt"
 	"html"
 	"io"
 	"net/http"
+
+	"github.com/theMagicRabbit/gator/internal/state"
 )
 
 type RSSFeed struct {
@@ -51,4 +54,19 @@ func FetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 		feed.Channel.Item[i] = item
 	}
 	return feed, nil
+}
+
+func ScrapeFeeds(s *state.State) error {
+	next, err := s.Db.GetNextFeedToFetch(context.Background())
+	if err != nil {
+		return err
+	}
+	feed, err := FetchFeed(context.Background(), next.Url)
+	if err != nil {
+		return err
+	}
+	for _, item := range feed.Channel.Item {
+		fmt.Println(item.Title)
+	}
+	return nil
 }
