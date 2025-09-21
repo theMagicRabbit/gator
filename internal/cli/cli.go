@@ -94,13 +94,6 @@ func HandlerAgg(s *state.State, cmd Command) error {
 	for ; ; <-ticker.C {
 		err := feed.ScrapeFeeds(s)
 		if err != nil {
-			var pqErr *pq.Error
-			if errors.As(err, &pqErr) {
-				// If the URl already exists, we can safely skip the error
-				if pqErr.Code == "23505" {
-					continue
-				}
-			}
 			return err
 		}
 	}

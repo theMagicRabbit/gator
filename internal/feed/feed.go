@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"html"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/theMagicRabbit/gator/internal/database"
 	"github.com/theMagicRabbit/gator/internal/state"
 )
@@ -81,7 +83,15 @@ func ScrapeFeeds(s *state.State) error {
 	for _, item := range feed.Channel.Item {
 		err = savePost(s, next, item)
 		if err != nil {
-			return err
+			var pqErr *pq.Error
+			if errors.As(err, &pqErr) {
+				// If the URl already exists, we can safely skip the error
+				if pqErr.Code == "23505" {
+					continue
+				}
+			} else {
+				return err
+			}
 		}
 	}
 	return nil
