@@ -5,7 +5,7 @@ CREATE TABLE posts (
     updated_at timestamp NOT NULL,
     title text,
     description text,
-    url text,
+    url text UNIQUE,
     published_at timestamp,
     feed_id uuid NOT NULL,
     CONSTRAINT pk_posts PRIMARY KEY (id),

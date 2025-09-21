@@ -92,7 +92,17 @@ func HandlerAgg(s *state.State, cmd Command) error {
 	fmt.Printf("Collecting feeds every %s\n", duration_between_reqs.String())
 	ticker := time.NewTicker(duration_between_reqs)
 	for ; ; <-ticker.C {
-		feed.ScrapeFeeds(s)
+		err := feed.ScrapeFeeds(s)
+		if err != nil {
+			var pqErr *pq.Error
+			if errors.As(err, &pqErr) {
+				// If the URl already exists, we can safely skip the error
+				if pqErr.Code == "23505" {
+					continue
+				}
+			}
+			return err
+		}
 	}
 }
 
