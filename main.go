@@ -50,6 +50,7 @@ func main() {
 	}
 	commands.Register("addfeed", middlewareLoggedIn(cli.HandlerAddFeed))
 	commands.Register("agg", cli.HandlerAgg)
+	commands.Register("browse", middlewareLoggedIn(cli.HandlerBrowse))
 	commands.Register("feeds", cli.HandlerFeeds)
 	commands.Register("follow", middlewareLoggedIn(cli.HandlerFollow))
 	commands.Register("following", middlewareLoggedIn(cli.HandlerFollowing))

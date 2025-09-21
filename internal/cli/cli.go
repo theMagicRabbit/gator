@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -97,6 +98,33 @@ func HandlerAgg(s *state.State, cmd Command) error {
 			return err
 		}
 	}
+}
+
+func HandlerBrowse(s *state.State, cmd Command, user database.User) error {
+	var postLimit int
+	var err error
+	if argLen := len(cmd.Args); argLen > 1 {
+		return fmt.Errorf("browse has one optional argument; %d provided.", argLen)
+	} else if argLen == 1 {
+		postLimit, err = strconv.Atoi(cmd.Args[0])
+		if err != nil {
+			return err
+		}
+	} else {
+		postLimit = 2
+	}
+	params := database.GetPostsForUserParams{
+		UserID: user.ID,
+		Limit: int32(postLimit),
+	}
+	posts, err := s.Db.GetPostsForUser(context.Background(), params)
+	if err != nil {
+		return err
+	}
+	for _, p := range posts {
+		fmt.Printf("%s: %s | %s\n", p.Title.String, p.Url.String, p.PublishedAt.Time.String())
+	}
+	return nil
 }
 
 func HandlerFeeds(s *state.State, cmd Command) error {
