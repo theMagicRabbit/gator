@@ -2,6 +2,7 @@ package feed
 
 import (
 	"context"
+	"database/sql"
 	"encoding/xml"
 	"fmt"
 	"html"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/theMagicRabbit/gator/internal/database"
 	"github.com/theMagicRabbit/gator/internal/state"
 )
@@ -77,7 +79,54 @@ func ScrapeFeeds(s *state.State) error {
 		return err
 	}
 	for _, item := range feed.Channel.Item {
-		fmt.Println(item.Title)
+		err = savePost(s, next, item)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
+}
+
+func savePost(s *state.State, feed database.Feed, item RSSItem) error {
+	utcNow := time.Now().UTC()
+	itemTitle := sql.NullString{}
+	itemUrl := sql.NullString{}
+	itemDescription := sql.NullString{}
+	itemPubDate := sql.NullTime{}
+	if item.Title != "" {
+		itemTitle.String = item.Title
+		itemTitle.Valid = true
+	}
+	if item.Link != "" {
+		itemUrl.String = item.Link
+		itemUrl.Valid = true
+	}
+	if item.Description != "" {
+		itemDescription.String = item.Description
+		itemDescription.Valid = true
+	}
+	pubDate, err := time.Parse("Mon, 03 Jan 2006 13:04:05 +0000", item.PubDate)
+	if err == nil {
+		if !pubDate.IsZero() {
+			itemPubDate.Time = pubDate
+			itemPubDate.Valid = true
+		}
+	}
+
+	params := database.CreatePostParams{
+		ID: uuid.New(),
+		CreatedAt: utcNow,
+		UpdatedAt: utcNow,
+		Title: itemTitle,
+		Url: itemUrl,
+		Description: itemDescription,
+		PublishedAt: itemPubDate,
+		FeedID: feed.ID,
+	}
+	post, err := s.Db.CreatePost(context.Background(), params)
+	if err != nil {
+		return err
+	}
+	fmt.Println(post)
 	return nil
 }
