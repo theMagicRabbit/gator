@@ -115,7 +115,7 @@ func savePost(s *state.State, feed database.Feed, item RSSItem) error {
 		itemDescription.String = item.Description
 		itemDescription.Valid = true
 	}
-	pubDate, err := time.Parse("Mon, 03 Jan 2006 13:04:05 +0000", item.PubDate)
+	pubDate, err := time.Parse(time.RFC1123Z, item.PubDate)
 	if err == nil {
 		if !pubDate.IsZero() {
 			itemPubDate.Time = pubDate
