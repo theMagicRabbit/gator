@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"fmt"
 	"os"
 
+	"github.com/pressly/goose/v3"
 	"github.com/theMagicRabbit/gator/internal/cli"
 	"github.com/theMagicRabbit/gator/internal/config"
 	"github.com/theMagicRabbit/gator/internal/database"
@@ -28,9 +30,12 @@ func middlewareLoggedIn(handler func(s *state.State, cmd cli.Command, user datab
 	}
 }
 
+//go:embed sql/schema/*.sql
+var embededMigrations embed.FS
 
 
 func main() {
+	goose.SetBaseFS(embededMigrations)
 	conf, err := config.Read()
 	if err != nil {
 		os.Exit(1)
@@ -40,6 +45,17 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	err = goose.SetDialect("postgres")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	err = goose.Up(db, "sql/schema")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	dbQueries := database.New(db)
 	runState := state.State{
 		Config: &conf,
